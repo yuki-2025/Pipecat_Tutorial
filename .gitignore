@@ -1,0 +1,23 @@
+# Virtual environment
+.venv/
+venv/
+
+# Python build artifacts
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+dist/
+build/
+
+# Secrets - NEVER commit
+.env
+examples/.env
+
+# IDE / OS
+.claude/
+.idea/
+.vscode/
+*.DS_Store
+Thumbs.db

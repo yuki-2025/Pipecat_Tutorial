@@ -1,0 +1,42 @@
+[
+  {
+    "timestamp": "2026-05-25T17:42:46.550957",
+    "role": "assistant",
+    "text": "Hello!"
+  },
+  {
+    "timestamp": "2026-05-25T17:42:46.616424",
+    "role": "assistant",
+    "text": "How can I assist you today?"
+  },
+  {
+    "timestamp": "2026-05-25T17:42:46.889241",
+    "role": "assistant",
+    "text": "If you ever want to restart the conversation, just say 'reset'."
+  },
+  {
+    "timestamp": "2026-05-25T17:42:57.491503",
+    "role": "assistant",
+    "text": "Sure!"
+  },
+  {
+    "timestamp": "2026-05-25T17:42:57.661562",
+    "role": "assistant",
+    "text": "Why don't scientists trust atoms?"
+  },
+  {
+    "timestamp": "2026-05-25T17:42:57.714619",
+    "role": "assistant",
+    "text": "Because they make up everything!"
+  },
+  {
+    "timestamp": "2026-05-25T17:43:10.526708",
+    "role": "assistant",
+    "text": "It's a pun!"
+  },
+  {
+    "timestamp": "2026-05-25T17:43:11.389383",
+    "role": "assistant",
+    "text": "Atoms are the basic building blocks of matter, so saying they \"make up everything\" plays on the double meaning of \"make up\" in the context of both creating substances and being untrustworthy."
+  }
+]
