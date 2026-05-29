@@ -1,5 +1,7 @@
 # Pipecat 学习指南
 
+> **语言：** 中文 | [English Version](README.md)
+
 ## 目录
 1. [Pipecat 是什么](#1-pipecat-是什么)
 2. [核心架构概念](#2-核心架构概念)
