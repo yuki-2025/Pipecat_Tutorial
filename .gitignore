@@ -21,3 +21,6 @@ examples/.env
 .vscode/
 *.DS_Store
 Thumbs.db
+
+plan.md
+plan2.md
