@@ -153,3 +153,54 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+# "MCP server" 是什么、在哪
+
+# 在 step8 里,MCP server = mcp-server-time —— 一个独立的 Python 程序。它不是常驻服务,而是 step8 运行时通过 stdio 临时拉起的子进程,bot 退出时它也跟着退出。
+
+# 物理位置(磁盘上)
+
+# uvx 把它装成了一个独立的工具(自带一个 venv),三个关键路径:
+
+# ┌──────────────────────────────┬───────────────────────────────────────────────────────────────┐
+# │             内容             │                             路径                              │
+# ├──────────────────────────────┼───────────────────────────────────────────────────────────────┤
+# │ 工具安装目录(独立 venv)      │ C:\Users\Yuki.Leong\AppData\Roaming\uv\tools\mcp-server-time\ │
+# ├──────────────────────────────┼───────────────────────────────────┤
+# │ 可执行入口(真正被启动的 exe) │ ...\mcp-server-time\Scripts\mcp-server-time.exe               │
+# ├──────────────────────────────┼───────────────────────────────────────────────────────────────┤
+# │ Python 源码(server 逻辑)     │ ...\mcp-s\mcp_server_time\        │
+# ├──────────────────────────────┼───────────────────────────────────────────────────────────────┤
+# │ uvx 下载缓存                 │ C:\Users\Yuki.Leong\AppData\Local\uv\cache                    │
+# └──────────────────────────────┴───────────────────────────────────┘
+
+# 版本:mcp-server-time v2026.6.4。
+
+# 它是怎么被启动的
+
+# step8 的这几行就是"指定 MCP server 在哪 + 怎么跑":
+
+# server_params=StdioServerParameters(
+#     command=shutil.which("uvx"),     # 用 uvx 来启动
+#     args=["mcp-server-time"],         # 启动哪个 server
+# )
+
+# 执行流程:
+
+# step8 (你的 bot)
+#    └─ uvx mcp-server-time          ← 启动
+#         └─ mcp-server-time.exe      ← 真正的 MCP server 进程
+#              ↕ stdio (stdin/stdout 上跑 JSON-RPC)
+#         bot 通过这条管道发现工具 (get_curr 用
+
+# bot 和 server 之间靠**标准输入输出(stdio)**通信,不走网络端口 —— 所以你在任务管理器或 netstat 里看不到监听端口,它就是个临时子进程。
+
+# 想直接看 / 手动跑它
+
+# # 直接启动 server(会等 stdin 输入,Ctrl+C 退出)
+# uvx mcp-server-time
+
+# # 看源码主入口
+# code "C:\Users\Yuki.Leong\AppData\Roaming\uv\tools\mcp-server-time\Lib\site-packages\mcp_server_time\__main__.py"
+
+# # 确认它装在哪

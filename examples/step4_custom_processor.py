@@ -138,7 +138,7 @@ class ConversationLogger(FrameProcessor):
 # 关键概念：
 #   - 可以在 FrameProcessor 里直接操作外部对象（context）
 #   - 不 push_frame = 吞掉这个 frame（不让 "reset" 进入 LLM）
-#   - 直接改 context.messages 再发 LLMRunFrame 触发新开场白
+#   - 用 context.set_messages([]) 清空，再 add_message 加系统提示，发 LLMRunFrame 触发新开场白
 # ═══════════════════════════════════════════════════════════════════════════
 class ConversationResetter(FrameProcessor):
 
@@ -154,7 +154,7 @@ class ConversationResetter(FrameProcessor):
         if isinstance(frame, TranscriptionFrame):
             if "reset" in frame.text.lower():
                 # 清空对话历史，只保留系统指令
-                self._context.messages = []
+                self._context.set_messages([])
                 self._context.add_message({
                     "role": "developer",
                     "content": "The conversation was just reset. Greet the user again briefly.",

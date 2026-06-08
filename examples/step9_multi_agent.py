@@ -67,11 +67,12 @@ from pipecat_subagents.agents import (
 )
 from pipecat_subagents.bus import AgentBus, BusBridgeProcessor  # 消息总线和路由器
 from pipecat_subagents.runner import AgentRunner                 # 管理所有 agent
+from pipecat_subagents.types import AgentReadyData               # @agent_ready 回调收到的数据
 
 load_dotenv()
 logger.remove(0)
-logger.add(sys.stderr, level="WARNING")
-
+# logger.add(sys.stderr, level="WARNING")
+logger.add(sys.stderr, level="INFO")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # LLM Agent 基类：两个 LLM agent 都继承这个
@@ -218,11 +219,26 @@ class MainAgent(BaseAgent):
         self._task = PipelineTask(pipeline, params=PipelineParams())
         return pipeline
 
-    @agent_ready("greeter")
-    async def on_greeter_ready(self):
-        """等 GreeterAgent 准备好后，激活它开始对话"""
+    # name= 是关键字参数（agent_ready 签名是 *, name: str）
+    # handler 会被调用为 handler(data)，所以必须接收 data: AgentReadyData
+    @agent_ready(name="greeter")
+    async def on_greeter_ready(self, data: AgentReadyData):
+        """等 GreeterAgent 准备好后，激活它并让它先开口打招呼"""
         logger.info("Greeter agent ready, activating...")
-        await self.activate_agent("greeter")
+        # 关键：必须传 args + messages，greeter 的 LLM 才会运行、主动问好。
+        # 源码 LLMAgent.on_activated 里只有 `if activation.messages:` 时才会
+        # queue LLMMessagesAppendFrame(run_llm=True)。不传 messages 的话
+        # greeter 虽然被激活，但 LLM 永远不跑 → bot 一直静默等你先说话。
+        await self.activate_agent(
+            "greeter",
+            args=LLMAgentActivationArgs(
+                messages=[{
+                    "role": "user",
+                    "content": "Greet the user warmly and ask how you can help.",
+                }],
+                run_llm=True,
+            ),
+        )
 
 
 async def main():
@@ -235,10 +251,24 @@ async def main():
     greeter = GreeterAgent("greeter", bus=runner.bus)
     support = SupportAgent("support", bus=runner.bus)
 
-    # 把 agent 加入 runner（greeter 和 support 作为 main 的子 agent）
+    # 把 main 加入 runner。run() 之前加的 root agent 会被 runner 暂存，
+    # 在 run() 启动时统一拉起 —— 这条没问题。
     await runner.add_agent(main_agent)
-    await main_agent.add_agent(greeter)
-    await main_agent.add_agent(support)
+
+    # ⚠️ 关键修复：子 agent 不能在 run() 之前加。
+    # main_agent.add_agent(child) 会往 bus 发一条 BusAddAgentMessage，
+    # 但 runner 是在 run() 里才 subscribe + start bus 的。run() 之前发的消息
+    # 因为「没有订阅者」被 AgentBus.on_message_received 直接丢弃（for 空循环），
+    # 于是 runner 永远不知道 greeter/support 的存在 → 它们的 pipeline 从不启动
+    # → 永不 ready → on_greeter_ready 不触发 → bot 全程静默、连 log 都没有。
+    #
+    # 解决：等 main 的 pipeline 起来（on_ready 触发，此时 bus 已经在跑、runner
+    # 已订阅）之后再 add_agent，消息才送得到 runner。
+    @main_agent.event_handler("on_ready")
+    async def _add_children(agent):
+        logger.info("Main agent ready, adding child agents...")
+        await agent.add_agent(greeter)
+        await agent.add_agent(support)
 
     print("=" * 55)
     print(" Multi-Agent Demo")

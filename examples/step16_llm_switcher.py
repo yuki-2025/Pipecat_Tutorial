@@ -88,7 +88,7 @@ class SwitchCommandDetector(FrameProcessor):
 
         if isinstance(frame, TranscriptionFrame):
             text = frame.text.lower()
-
+            #说什么就转到什么llm，by text
             if ("switch to smart" in text or "smart mode" in text) and self._current != "full":
                 self._current = "full"
                 # ManuallySwitchServiceFrame：告诉 LLMSwitcher 切换到指定的 LLM
@@ -209,3 +209,14 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+#(pipecat) PS C:\Users\Yuki.Leong\github\pipecat> python .\examples\step16_llm_switcher.py           
+# 2026-06-07 23:28:13.553 | INFO     | pipecat:<module>:14 - ᓚᘏᗢ Pipecat 1.2.1 (Python 3.12.13 (main, Apr 14 2026, 14:31:26) [MSC v.1944 64 bit (AMD64)]) ᓚᘏᗢ
+# [transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+# =======================================================
+#  LLMSwitcher Demo
+#  Default: gpt-4o-mini (fast, cheap)
+#  Say 'switch to smart' → gpt-4o (smart, expensive)
+#  Say 'switch to fast'  → back to gpt-4o-mini
+# =======================================================

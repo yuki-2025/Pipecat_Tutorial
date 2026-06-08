@@ -5,7 +5,7 @@
 ## 目录
 1. [Pipecat 是什么](#1-pipecat-是什么)
 2. [核心架构概念](#2-核心架构概念)
-3. [学习路线图](#3-学习路线图-18-个-example)
+3. [学习路线图](#3-学习路线图-19-个-example)
 4. [安装什么 Library](#4-安装什么-library)
 5. [pipecat-ai-cli 是什么](#5-pipecat-ai-cli-是什么)
 6. [MCP 是什么](#6-mcp-是什么)
@@ -106,7 +106,7 @@ class MyProcessor(FrameProcessor):
 
 ---
 
-## 3. 学习路线图（8 个 example）
+## 3. 学习路线图（19 个 example）
 
 ### ✅ Level 1 — 基础跑通
 | 文件 | 学到什么 | 需要的 Key |
@@ -145,6 +145,9 @@ class MyProcessor(FrameProcessor):
 | `step16_llm_switcher.py` | LLMSwitcher, ManuallySwitchServiceFrame, ServiceSwitcherStrategyFailover | OpenAI |
 | `step17_context_summarization.py` | enable_auto_context_summarization, LLMAutoContextSummarizationConfig | 同上 |
 | `step18_multimodal.py` | LLMContext.create_image_url_message, 图片进 context | 同上 |
+| `step19_modular_openai.py` | OpenAISTTService + OpenAITTSService，全 OpenAI 模块化 pipeline，只用一个 API key（对比 step14 speech-to-speech） | **只要 OpenAI** |
+
+> **模块化 vs Speech-to-Speech**：step19 和 step2 一样是 STT→LLM→TTS 三段式 pipeline，但三个服务全用 OpenAI —— 所以只需要一个 `OPENAI_API_KEY`。step14 则用单个 Realtime 模型搞定（延迟更低，成本更高）。step19 = 模块化、可替换、便宜；step14 = 一体化、快。
 
 > **Twilio + OpenAI Realtime（生产级电话版）**：`C:\Users\Yuki.Leong\github\twilio`
 > 包含 WebSocket server + Twilio webhook + 完整电话接入
@@ -176,6 +179,7 @@ python examples/step15_speech_to_speech_gemini.py   # GOOGLE_API_KEY + uv add "p
 python examples/step16_llm_switcher.py
 python examples/step17_context_summarization.py
 python examples/step18_multimodal.py
+python examples/step19_modular_openai.py        # 全 OpenAI STT+LLM+TTS，只需 OPENAI_API_KEY
 ```
 
 ---
@@ -218,6 +222,15 @@ uv add "pipecat-ai[google]"
 需要 OpenAI Realtime API 访问权限（`gpt-4o-realtime-preview`）。
 Realtime API 比普通 OpenAI API 贵，按音频分钟计费。
 你的生产级 Twilio 版本：`C:\Users\Yuki.Leong\github\twilio`
+
+### step19 注意事项（全 OpenAI 模块化 pipeline）
+```bash
+# 不需要额外服务 —— 只要 openai extra + 本地麦克风/喇叭
+uv add "pipecat-ai[local,openai,silero]"
+```
+用 `OpenAISTTService`（gpt-4o-transcribe）+ `OpenAILLMService`（gpt-4o-mini）+ `OpenAITTSService`（gpt-4o-mini-tts）。  
+只需要 `OPENAI_API_KEY`，不需要 Deepgram / ElevenLabs / Cartesia 的 key。  
+这里的 OpenAI STT 是 **segmented**（REST）模式：VAD 判断你说完一句后整段转录，所以比 Deepgram 流式略高延迟。想要更低延迟可换成 `OpenAIRealtimeSTTService`。
 
 ### step5 如果用 Daily transport
 ```bash

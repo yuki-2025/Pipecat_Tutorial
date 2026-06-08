@@ -46,6 +46,8 @@ from pipecat.utils.context.llm_context_summarization import (
     LLMAutoContextSummarizationConfig,
     LLMContextSummaryConfig,
 )
+# on_summary_applied 事件回调收到的数据对象（只含计数，不含摘要正文）
+from pipecat.processors.aggregators.llm_context_summarizer import SummaryAppliedEvent
 
 from pipecat.services.deepgram.stt import DeepgramSTTService
 from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
@@ -116,12 +118,17 @@ async def main():
     )
 
     # ── 监听压缩事件 ──────────────────────────────────────────────────────
+    # 真实回调签名是 (aggregator, summarizer, event)：
+    #   - aggregator：发事件的 LLMAssistantAggregator
+    #   - summarizer：内部的 summarizer 对象
+    #   - event：SummaryAppliedEvent，只带「条数」统计，不带摘要正文
     @assistant_aggregator.event_handler("on_summary_applied")
-    async def on_summary_applied(aggregator, summary: str, messages_before: int, messages_after: int):
+    async def on_summary_applied(aggregator, summarizer, event: SummaryAppliedEvent):
         print(f"\n[Context Summarized]")
-        print(f"  Before: {messages_before} messages")
-        print(f"  After : {messages_after} messages")
-        print(f"  Summary preview: {summary[:100]}...")
+        print(f"  Before     : {event.original_message_count} messages")
+        print(f"  After      : {event.new_message_count} messages")
+        print(f"  Compressed : {event.summarized_message_count} messages → summary")
+        print(f"  Preserved  : {event.preserved_message_count} recent messages kept")
 
     pipeline = Pipeline([
         transport.input(),
@@ -163,3 +170,31 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+#(pipecat) PS C:\Users\Yuki.Leong\github\pipecat> python .\examples\step17_context_summarization.py
+# 2026-06-07 23:36:31.766 | INFO     | pipecat:<module>:14 - ᓚᘏᗢ Pipecat 1.2.1 (Python 3.12.13 (main, Apr 14 2026, 14:31:26) [MSC v.1944 64 bit (AMD64)]) ᓚᘏᗢ
+# [transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+# =======================================================
+#  Context Summarization Demo
+#  每 5 条消息（或超 1000 token）自动压缩 context
+#  压缩时会打印 [Context Summarized]
+#  尽量多聊几轮触发压缩
+# =======================================================
+
+# [Context Summarized]
+#   Before     : 8 messages
+#   After      : 4 messages
+#   Compressed : 5 messages → summary
+#   Preserved  : 3 recent messages kept
+
+# [Context Summarized]
+#   Before     : 7 messages
+#   After      : 4 messages
+#   Compressed : 4 messages → summary
+#   Preserved  : 3 recent messages kept
+
+# [Context Summarized]
+#   Before     : 8 messages
+#   After      : 4 messages
+#   Compressed : 5 messages → summary
+#   Preserved  : 3 recent messages kept

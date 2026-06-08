@@ -56,11 +56,15 @@ load_dotenv()
 logger.remove(0)
 logger.add(sys.stderr, level="WARNING")
 
-# 测试用图片 URLs（公开可访问）
+# 测试用图片 URLs —— 关键：必须是 OpenAI 服务器能直接下载的地址！
+# create_image_url_message 只把 URL 发给 OpenAI，由 OpenAI 自己去下载图片。
+# ⚠️ 不要用 upload.wikimedia.org：它对非浏览器请求（包括 OpenAI 的下载器）
+#    返回 403/400 → OpenAI 报 400 invalid_image_url（之前就是这个错）。
+#    这里改用 Unsplash CDN（对任何客户端都返回 200）+ pipecat 仓库自带 logo。
 SAMPLE_IMAGES = {
-    "pipecat": "https://raw.githubusercontent.com/pipecat-ai/pipecat/main/docs/assets/logo.png",
-    "chart":   "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/24701-nature-natural-beauty.jpg/320px-24701-nature-natural-beauty.jpg",
-    "diagram": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Culinary_fruits_front_view.jpg/320px-Culinary_fruits_front_view.jpg",
+    "pipecat": "https://raw.githubusercontent.com/pipecat-ai/pipecat/main/pipecat.png",       # Pipecat 官方 logo
+    "chart":   "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=512&q=80",     # 绿色山峦风景照
+    "diagram": "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=512&q=80",     # 各种水果
 }
 
 
@@ -93,7 +97,7 @@ class ImageInjector(FrameProcessor):
                 return
 
             # 用户说 "show pipecat logo" 时加载 pipecat logo
-            elif "pipecat" in text and ("logo" in text or "image" in text):
+            elif ("pipecat" in text or "cat" in text) and ("logo" in text or "image" in text):
                 await self._load_image("pipecat", text)
                 return
 

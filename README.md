@@ -5,7 +5,7 @@
 ## Table of Contents
 1. [What is Pipecat](#1-what-is-pipecat)
 2. [Core Architecture Concepts](#2-core-architecture-concepts)
-3. [Learning Roadmap](#3-learning-roadmap-18-examples)
+3. [Learning Roadmap](#3-learning-roadmap-19-examples)
 4. [Which Libraries to Install](#4-which-libraries-to-install)
 5. [What is pipecat-ai-cli](#5-what-is-pipecat-ai-cli)
 6. [What is MCP](#6-what-is-mcp)
@@ -106,7 +106,7 @@ class MyProcessor(FrameProcessor):
 
 ---
 
-## 3. Learning Roadmap (18 Examples)
+## 3. Learning Roadmap (19 Examples)
 
 ### ✅ Level 1 — Get the Basics Running
 | File | What You Learn | Keys Required |
@@ -145,6 +145,9 @@ class MyProcessor(FrameProcessor):
 | `step16_llm_switcher.py` | LLMSwitcher, ManuallySwitchServiceFrame, ServiceSwitcherStrategyFailover | OpenAI |
 | `step17_context_summarization.py` | enable_auto_context_summarization, LLMAutoContextSummarizationConfig | Same as above |
 | `step18_multimodal.py` | LLMContext.create_image_url_message, images into context | Same as above |
+| `step19_modular_openai.py` | OpenAISTTService + OpenAITTSService, all-OpenAI modular pipeline, single API key (contrast with step14 speech-to-speech) | **OpenAI only** |
+
+> **Modular vs Speech-to-Speech**: step19 builds the same 3-stage STT→LLM→TTS pipeline as step2, but uses OpenAI for *all three* services — so it needs only one `OPENAI_API_KEY`. step14 does it with a single Realtime model (lower latency, higher cost). step19 = modular & swappable & cheap; step14 = unified & fast.
 
 > **Twilio + OpenAI Realtime (production phone version)**: `C:\Users\Yuki.Leong\github\twilio`
 > Includes WebSocket server + Twilio webhook + full phone integration
@@ -176,6 +179,7 @@ python examples/step15_speech_to_speech_gemini.py   # GOOGLE_API_KEY + uv add "p
 python examples/step16_llm_switcher.py
 python examples/step17_context_summarization.py
 python examples/step18_multimodal.py
+python examples/step19_modular_openai.py        # all OpenAI STT+LLM+TTS, only needs OPENAI_API_KEY
 ```
 
 ---
@@ -218,6 +222,15 @@ uv add "pipecat-ai[google]"
 Requires OpenAI Realtime API access (`gpt-4o-realtime-preview`).  
 Realtime API is more expensive than regular OpenAI API — billed per audio minute.  
 Your production Twilio version: `C:\Users\Yuki.Leong\github\twilio`
+
+### step19 notes (all-OpenAI modular pipeline)
+```bash
+# No extra services needed — only the OpenAI extra and a local mic/speaker
+uv add "pipecat-ai[local,openai,silero]"
+```
+Uses `OpenAISTTService` (gpt-4o-transcribe) + `OpenAILLMService` (gpt-4o-mini) + `OpenAITTSService` (gpt-4o-mini-tts).  
+Only `OPENAI_API_KEY` is required — no Deepgram / ElevenLabs / Cartesia keys.  
+OpenAI STT here is **segmented** (REST): it transcribes each utterance after VAD detects you stopped talking, so it's slightly higher-latency than streaming Deepgram. For lower latency, swap in `OpenAIRealtimeSTTService`.
 
 ### step5 with Daily transport
 ```bash

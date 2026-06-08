@@ -10,13 +10,15 @@ dependencies = [
   "pydantic-settings>=2.6",
   "structlog>=24.4",
   "openai>=1.60",
-  "pipecat-ai[cartesia,deepgram,local,openai,silero,webrtc]>=1.2.1",
+  "pipecat-ai[cartesia,deepgram,google,local,mcp,openai,silero,webrtc]>=1.2.1",
   "python-dotenv>=1.2.2",
   "loguru>=0.7.3",
   "pipecat-ai-small-webrtc-prebuilt>=2.5.0",
   "langgraph>=1.2.1",
   "langchain-openai>=1.2.2",
   "langchain-core>=1.4.0",
+  "pipecat-ai-flows>=1.1.1",
+  "pipecat-ai-subagents>=0.6.0",
 ]
 
 [tool.uv]

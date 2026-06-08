@@ -192,7 +192,8 @@ async def main():
     )
 
     context = LLMContext()
-    user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
+    # 保留 pair 对象不要解包 —— FlowManager 需要调用 pair.user() / pair.assistant()
+    context_aggregator = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(
             vad_analyzer=SileroVADAnalyzer(),
@@ -203,21 +204,21 @@ async def main():
     pipeline = Pipeline([
         transport.input(),
         stt,
-        user_aggregator,
+        context_aggregator.user(),       # user aggregator
         llm,
         tts,
         transport.output(),
-        assistant_aggregator,
+        context_aggregator.assistant(),  # assistant aggregator
     ])
 
     task = PipelineTask(pipeline, params=PipelineParams())
 
     # FlowManager：连接 task / llm / aggregator / transport
-    # 它接管对话的节点转换逻辑
+    # 传入 pair 对象（不是解包后的 tuple），它内部会调用 .user() / .assistant()
     flow_manager = FlowManager(
         task=task,
         llm=llm,
-        context_aggregator=(user_aggregator, assistant_aggregator),
+        context_aggregator=context_aggregator,
         transport=transport,
     )
 
